@@ -1,7 +1,14 @@
 # MR-DORR
  MR 2021 Project DORR - Drink-Oriented Remote Refrigerator
 
-## Usage
+## 개요
+![hardware](assets/hw.png)
+### Terminology
+* 냉장고 아이디(RID): 냉장고별로 가지는 고유의 ID
+* 섹터주소(SID): 냉장고의 각 섹터는 랜덤한 32비트 고유주소를 가짐(ex. 3A:BE:E3:E3)
+  * 단일 냉장고에서 이 값이 겹치지 않는다고 가정할 수 있음
+
+## 서버
 
 ### Authentication
 
@@ -28,7 +35,7 @@
 }
 ```
 * RID에 해당하는 냉장고 객체를 생성
-* 만약 이미 있다면, 이름만 변경됨
+* 만약 이미 있다면, Alias만 변경됨
 
 #### GET /stat/\<RID>
 응답 예시 (GET /stat/test1234)
@@ -73,6 +80,7 @@
 ```
 * RID에 해당하는 냉장고의 현재 상태
 * 만약 객체가 한번도 하트비트를 받지 못했다면, initialized 속성이 false이며 name이외의 속성을 사용할 수 없음
+* lastUpdated: 마지막으로 하트비트를 받은 시점의 Unix Epoch(nano second)
   
 #### DELETE /stat/\<RID>
 냉장고 객체를 삭제
