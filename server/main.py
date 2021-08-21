@@ -102,7 +102,7 @@ def ep_refrig(rid):
                 resp["status"][sid] = mslot
         else:
             print("ep_refrig: invalid sector id request")
-        DB_REFRI[rid]["request"].pop(sid)
+    DB_REFRI[rid]["request"] = {}
     
     return jsonify(resp)
 
