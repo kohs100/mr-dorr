@@ -13,37 +13,41 @@ def printlen(num, word):
     print(word + ' ' * (num - len(word)), end='')
 
 def perror(resp):
-        sc = resp.status_code
-        if sc == 200:
-            return False
-        elif sc == 500:
-            print('ERROR: Internal Server Error')
-        elif sc == 400:
-            print('ERROR: Bad Request Body')
-        elif sc == 401:
-            print('ERROR: Unauthorized')
-        elif sc == 403:
-            print('ERROR: Forbidden')
-        elif sc == 404:
-            if resp.text == 'Uninitialized RID':
-                print('ERROR: 초기화되지 않은 냉장고')
-            else:
-                print('ERROR: 올바르지 않은 냉장고 또는 섹터 값')
-        elif sc == 405:
-            print('ERROR: Method Not Allowed')
+    sc = resp.status_code
+    if sc == 200:
+        return False
+    elif sc == 500:
+        print('ERROR: Internal Server Error')
+    elif sc == 400:
+        print('ERROR: Bad Request Body')
+    elif sc == 401:
+        print('ERROR: Unauthorized')
+    elif sc == 403:
+        print('ERROR: Forbidden')
+    elif sc == 404:
+        if resp.text == 'Uninitialized RID':
+            print('ERROR: 초기화되지 않은 냉장고')
         else:
-            print('ERROR: Unknown')
-        return True
+            print('ERROR: 올바르지 않은 냉장고 또는 섹터 값')
+    elif sc == 405:
+        print('ERROR: Method Not Allowed')
+    else:
+        print('ERROR: Unknown')
+    return True
 
 class Commands():
     def __init__(self):
         self._selection = {
-            "fridge": '',
-            "sector": '',
+            "fridge": None,
+            "sector": None,
         }
     
     def get_selection(self, key):
-        return self._selection[key]
+        res = self._selection[key]
+        if res:
+            return res
+        else:
+            return '~'
     
     def list(self, tokens):
         def print_help():
@@ -116,7 +120,7 @@ class Commands():
                 if perror(res):
                     return
                 self._selection['fridge'] = selection
-                self._selection['sector'] = ''
+                self._selection['sector'] = None
                 print('선택된 냉장고:', selection)
 
         elif tokens[1] == 'sector':
@@ -211,7 +215,7 @@ if __name__ == '__main__':
             UNAME = inp
             break
     
-    print('-----'*5)
+    print('-'*25)
     comm = Commands()
 
     while True:
