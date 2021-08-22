@@ -2,3 +2,5 @@
 test.py
 server/drinks.json
 server/refrig.json
+server/__pycache__/*
+*.pyc

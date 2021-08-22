@@ -160,9 +160,12 @@ def ep_stat_update(rid):
     if not DB_REFRI[rid]['initialized']:
         return 'Uninitialized RID', 404
 
-    for sid in data['status']:
+    for sid, mslot in data['status'].items():
         if sid not in DB_REFRI[rid]['status']:
             print('ep_stat_update: invalid sector id:', sid)
+            abort(400)
+        if mslot >= DB_REFRI[rid]['status']['numslot']:
+            print('ep_stat_update: request mainslot out of range')
             abort(400)
 
     for sid, mslot in data['status'].items():

@@ -150,7 +150,7 @@
   * 냉장고는 냉장고 문의 상태가 변경되면 즉시 보고하여 상태를 업데이트할 의무를 가짐
 
 ---
-### Refrigerator Side Endpoints
+### DB Endpoints
 #### GET /db
 응답 예시
 ```json

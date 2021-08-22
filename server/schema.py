@@ -1,7 +1,5 @@
-from re import M
-
-
 PATTERN_SID = r'^[A-Fa-f0-9]{8}$'
+
 
 class Schema():
     ep_refrig_post = {
