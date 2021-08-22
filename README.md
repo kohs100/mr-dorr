@@ -7,6 +7,7 @@
 * 냉장고 아이디(RID): 냉장고별로 가지는 고유의 ID
 * 섹터주소(SID): 냉장고의 각 섹터는 랜덤한 32비트 고유주소를 가짐(ex. 3A:BE:E3:E3)
   * 단일 냉장고에서 이 값이 겹치지 않는다고 가정할 수 있음
+* 음료코드(DID): 음료수에 있는 바코드를 스캔한 값
 * 메인슬롯(mainslot): 각 섹터의, 냉장고 문을 열자마자 접근할 수 있는 슬롯의 ID를 나타냄
   * 값: 0 ~ N-1 (N=슬롯갯수)
 
@@ -87,15 +88,15 @@
   * 냉장고는 냉장고 문의 상태가 변경되면 즉시 보고하여 상태를 업데이트할 의무를 가짐
   
 #### DELETE /stat/\<RID>
-냉장고 객체를 삭제
+* RID에 해당하는 냉장고 객체를 삭제
 
 #### PUT /stat/\<RID>
 요청 예시 (PUT /stat/test1234)
 ```json
 {
-  "status":{
-    "BF3A4C21": 3
-  }
+    "status":{
+        "BF3A4C21": 3
+    }
 }
 ```
 * RID에 해당하는 냉장고의 특정 섹터(들)의 메인슬롯 변경을 요청함
@@ -106,31 +107,31 @@
 요청 예시 (POST /refrig/test1234)
 ```json
 {
-  "opened": false,
-  "status": {
-    "3ABEE3E3": {
-        "numslot": 4,
-        "mainslot": 2,
-        "status": [
-            null,
-            "asdf",
-            "fdsa",
-            null
-        ]
-    },
-    "BF3A4C21": {
-        "numslot": 6,
-        "mainslot": 4,
-        "status": [
-            null,
-            "asdf",
-            "fdsa",
-            null,
-            "qwer",
-            null
-        ]
+    "opened": false,
+    "status": {
+        "3ABEE3E3": {
+            "numslot": 4,
+            "mainslot": 2,
+            "status": [
+                null,
+                "asdf",
+                "fdsa",
+                null
+            ]
+        },
+        "BF3A4C21": {
+            "numslot": 6,
+            "mainslot": 4,
+            "status": [
+                null,
+                "asdf",
+                "fdsa",
+                null,
+                "qwer",
+                null
+            ]
+        }
     }
-  }
 }
 ```
 응답 예시
@@ -149,7 +150,58 @@
   * 냉장고는 냉장고 문의 상태가 변경되면 즉시 보고하여 상태를 업데이트할 의무를 가짐
 
 ---
+### Refrigerator Side Endpoints
+#### GET /db
+응답 예시
+```json
+{
+    "asdf": {
+        "name": "몬스터에너지",
+        "img": true
+    },
+    "fdsa": {
+        "name": "코카콜라",
+        "img": true
+    },
+    "qwer": {
+        "name": "코카콜라 제로",
+        "img": false
+    }
+}
+```
+* 현재 음료 DB에 있는 음료를 모두 리스팅
+* img: DB에 음료 이미지가 있는 경우 true, 없다면 false
 
+#### GET /db/\<did>
+응답 예시 (GET /db/asdf)
+```json
+{
+    "name": "몬스터에너지",
+    "img": true
+}
+```
+* DID에 해당하는 음료의 정보만 반환
+  
+#### POST /db/\<did>
+요청 예시 (POST /db/qwer)
+```json
+{
+    "name": "코카콜라 제로"
+}
+```
+* DID에 해당하는 음료를 추가
+* 만약 이미 있다면 name만 수정됨
+
+#### DELETE /db/\<did>
+* DID에 해당하는 음료 정보를 삭제
+
+#### GET /db/\<did>/img
+* DID에 해당하는 음료 이미지
+
+#### POST /db/\<did>/img
+* DID에 해당하는 음료 이미지를 생성 또는 수정
+
+---
 ### Errors
 * 200: 요청이 올바르게 처리/전달 되었음
 * 400: 올바르지 않은 요청(Invalid JSON, etc...)

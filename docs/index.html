@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>DORR Dev Console</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" type="text/css" href="style/style.css">
+    <link rel="stylesheet" type="text/css" href="style/grid.css">
+    
+    <script type="text/javascript" src="js/main.js"></script>
+</head>
+
+<body>
+    <div id="mainContainer">
+        <div id="searchContainer" class="grayBox">
+            <div class="gridEntry">RID</div>
+            <div id="srchBox" class="gridValue">
+                <input type="text" id="srchField" placeholder="Enter RID">
+            </div>
+            <div id="srchIndicator">Go</div>
+        </div>
+        <div id="centerContainer" class="grayBox">
+            <div id="imageBox">
+                <img id="workImage" src="placeholder.png">
+            </div>
+            <div id="infoBox" class="borderBox">
+                <div class="infoCTG gridEntry">3ABEE3E3</div>
+                <div id="CTGValue" class="infoValue infoCTG gridValue"></div>
+                <div class="infoRLS gridEntry">RLS</div>
+                <div id="RLSValue" class="infoValue infoRLS gridValue"></div>
+                <div class="infoMKR gridEntry">MKR</div>
+                <div id="MKRValue" class="infoValue infoMKR gridValue"></div>
+                <div class="infoPID gridEntry">PID</div>
+                <div id="PIDValue" class="infoValue infoPID gridValue"></div>
+            </div>
+            <div id="titleContainer" class="borderBox">
+                <div id="titleEntry" class="gridEntry">Status</div>
+                <div id="titleBox" class="gridValue"></div>
+            </div>
+        </div>
+
+    </div>
+</body>
+
+</html>

@@ -1,15 +1,16 @@
+from json.decoder import JSONDecodeError
 from flask import Flask, abort, request, jsonify
 from flask_cors import CORS
+from schema import Schema
 import json
 import atexit
 import re
 import time
+import jsonschema
 
 DB_REFRI = {}
 DB_DRINK = {}
 DB_AUTHK = {}
-
-PATTERN_SID = re.compile(r'^[A-F0-9]{8}$')
 
 
 def load_db():
@@ -45,30 +46,6 @@ app = Flask(__name__)
 CORS(app)
 
 
-def validate_hb(data):
-    if "opened" not in data or "status" not in data:
-        return False
-
-    try:
-        for sid, obj in data['status'].items():
-            if not PATTERN_SID.search(sid):
-                print('invalid sector id')
-                return False
-
-            if len(obj["status"]) != obj["numslot"]:
-                print('slot number mismatch')
-                return False
-
-            if obj["mainslot"] < 0 or obj["mainslot"] >= obj["numslot"]:
-                print('invalid mainslot number')
-                return False
-    except Exception as e:
-        print('validate_hb: exception occured:', e)
-        return False
-
-    return True
-
-
 @app.route('/refrig/<rid>', methods=['POST'])
 def ep_refrig(rid):
     global DB_REFRI
@@ -79,14 +56,14 @@ def ep_refrig(rid):
 
     try:
         data = json.loads(request.data)
+        jsonschema.validate(schema=Schema.ep_refrig_post, instance=data)
     except json.decoder.JSONDecodeError:
         print('ep_refrig: JSONDecodeError')
         abort(400)
-
-    if not validate_hb(data):
-        print('ep_refrig: Invalid HeartBeat')
+    except jsonschema.ValidationError as e:
+        print('ep_refrig: Bad HeartBeat:', e)
         abort(400)
-    
+
     DB_REFRI[rid]["initialized"] = True
     DB_REFRI[rid]["opened"] = data["opened"]
     DB_REFRI[rid]["status"] = data["status"]
@@ -95,7 +72,7 @@ def ep_refrig(rid):
     resp = {}
     resp["urgent"] = DB_REFRI[rid]["urgent"]
     resp["status"] = {}
-    
+
     for sid, mslot in DB_REFRI[rid]["request"].items():
         if sid in data["status"]:
             if data["status"][sid]["mainslot"] != mslot:
@@ -103,16 +80,18 @@ def ep_refrig(rid):
         else:
             print("ep_refrig: invalid sector id request")
     DB_REFRI[rid]["request"] = {}
-    
+
     return jsonify(resp)
+
 
 @app.route('/stat', methods=['GET'])
 def ep_stat_list():
     resp = {}
     for rid in DB_REFRI:
         resp[rid] = DB_REFRI[rid]["name"]
-    
+
     return jsonify(resp)
+
 
 @app.route('/stat/<rid>', methods=['GET'])
 def ep_stat_get(rid):
@@ -131,65 +110,66 @@ def ep_stat_get(rid):
         resp["lastUpdated"] = obj["last_updated"]
         return jsonify(resp)
 
+
 @app.route('/stat/<rid>', methods=['POST'])
 def ep_stat_create(rid):
     global DB_REFRI
+
     try:
         data = json.loads(request.data)
+        jsonschema.validate(schema=Schema.ep_stat_create, instance=data)
     except json.decoder.JSONDecodeError:
         print('ep_stat_create: JSONDecodeError')
         abort(400)
-    
-    try:
-        if 'name' not in data:
-            print('ep_stat_create: Invalid body: no name')
-            abort(400)
-        if rid not in DB_REFRI:
-            print('ep_stat_create: Creating new refrigerator', rid)
-            DB_REFRI[rid] = {
-                "name": data['name'],
-                "initialized": False,
-                "request": {},
-                "urgent": False
-            }
-        else:
-            print('ep_stat_create: modifying name of refrigerator', rid)
-            DB_REFRI[rid]['name'] = data['name']
-    except Exception as e:
-        print('ep_stat_create: Invalid body')
+    except jsonschema.ValidationError as e:
+        print('ep_stat_create: Bad HeartBeat:', e)
         abort(400)
-    
+
+    if rid not in DB_REFRI:
+        print('ep_stat_create: Creating new refrigerator', rid)
+        DB_REFRI[rid] = {
+            "name": data['name'],
+            "initialized": False,
+            "request": {},
+            "urgent": False
+        }
+    else:
+        print('ep_stat_create: modifying name of refrigerator', rid)
+        DB_REFRI[rid]['name'] = data['name']
+
     return ''
+
 
 @app.route('/stat/<rid>', methods=['PUT'])
 def ep_stat_update(rid):
     global DB_REFRI
     try:
         data = json.loads(request.data)
+        jsonschema.validate(schema=Schema.ep_stat_update, instance=data)
     except json.decoder.JSONDecodeError:
         print('ep_stat_update: JSONDecodeError')
         abort(400)
-    
+    except jsonschema.ValidationError as e:
+        print('ep_stat_update: Bad HeartBeat:', e)
+        abort(400)
+
     if rid not in DB_REFRI:
         print('ep_stat_update: KeyError:', rid)
         abort(404)
-    
+
     if not DB_REFRI[rid]['initialized']:
         return 'Uninitialized RID', 404
 
-    try:
-        for sid in data['status']:
-            if sid not in DB_REFRI[rid]['status']:
-                print('ep_stat_update: invalid sector id:', sid)
-                abort(400)
+    for sid in data['status']:
+        if sid not in DB_REFRI[rid]['status']:
+            print('ep_stat_update: invalid sector id:', sid)
+            abort(400)
 
-        for sid, mslot in data['status'].items():
-            DB_REFRI[rid]['request'][sid] = mslot
-    except Exception as e:
-        print('ep_stat_update: exception occured: ', e)
-        abort(500)
-    
-    return 'Request Pushed for '+rid, 200
+    for sid, mslot in data['status'].items():
+        DB_REFRI[rid]['request'][sid] = mslot
+
+    return 'Request Pushed for ' + rid, 200
+
 
 @app.route('/stat/<rid>', methods=['DELETE'])
 def ep_stat_delete(rid):
@@ -201,6 +181,45 @@ def ep_stat_delete(rid):
 
     return ''
 
+
+@app.route('/db', methods=['GET'])
+def ep_db_list():
+    global DB_DRINK
+    return jsonify(DB_DRINK)
+
+
+@app.route('/db/<did>', methods=['GET'])
+def ep_db_get(did):
+    if did in DB_DRINK:
+        return jsonify(DB_DRINK[did])
+    else:
+        abort(404)
+
+
+@app.route('/db/<did>', methods=['POST'])
+def ep_db_create(did):
+    global DB_DRINK
+
+    try:
+        data = json.loads(request.data)
+        jsonschema.validate(schema=Schema.ep_db_create, instance=data)
+    except json.decoder.JSONDecodeError:
+        print('ep_db_create: JSONDecodeError')
+        abort(400)
+    except jsonschema.ValidationError as e:
+        print('ep_db_create: Bad HeartBeat:', e)
+        abort(400)
+
+    if did in DB_DRINK:
+        DB_DRINK[did]['name'] = data['name']
+    else:
+        DB_DRINK[did] = {
+            'name': data['name'],
+            'img': False
+        }
+    return ''
+
+
 @app.before_request
 def auth_request():
     xkey = request.headers.get('x-api-key')
@@ -209,7 +228,7 @@ def auth_request():
         abort(401)              # 401 Unauthorized
     if xkey not in DB_AUTHK:
         abort(403)              # 403 Forbidden
-    
+
 
 if __name__ == '__main__':
     load_db()
